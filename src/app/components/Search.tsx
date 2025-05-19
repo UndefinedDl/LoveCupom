@@ -7,7 +7,7 @@ export const SearchBar = ({
   setStatusFilter,
   categories
 }: any) => (
-  <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+  <div className="bg-white rounded-lg shadow-md p-4 mb-6 text-black">
     <div className="flex flex-col md:flex-row gap-4">
       <div className="flex-1">
         <input

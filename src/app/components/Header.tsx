@@ -6,7 +6,7 @@ export const Header = () => (
       <h1 className="text-2xl font-bold flex items-center">
         <Heart className="mr-2" fill="white" /> Cupons de Amor
       </h1>
-      <div className="text-sm">Com todo meu carinho ❤️</div>
+      <div className="text-sm">Com todo meu amor para Mariane ❤️</div>
     </div>
   </header>
 )
