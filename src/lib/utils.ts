@@ -29,6 +29,45 @@ export function parseDate(dateString: string | null | undefined): Date | null {
 export function formatDateBR(date: Date | string | null | undefined): string {
   if (!date) return ''
 
-  const dateObj = typeof date === 'string' ? new Date(date) : date
-  return dateObj.toLocaleDateString('pt-BR')
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+
+    // Verificar se a data é válida
+    if (isNaN(dateObj.getTime())) {
+      return typeof date === 'string' ? date : ''
+    }
+
+    return dateObj.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  } catch (error) {
+    // Se houver erro no formato da data, retorna a string original ou vazio
+    return typeof date === 'string' ? date : ''
+  }
+}
+
+/**
+ * Converte entre os formatos de cupom do banco de dados e da interface
+ * Útil para adaptar entre diferentes representações de cupons
+ */
+export function adaptCouponToCouponCard(coupon: any): any {
+  return {
+    id: coupon.id,
+    title: coupon.title,
+    description: coupon.description,
+    icon: coupon.icon,
+    category: coupon.category,
+    used: coupon.isUsed ?? false,
+    validUntil: formatDateBR(coupon.validUntil),
+    redeemedAt: coupon.redeemedAt ? formatDateBR(coupon.redeemedAt) : null
+  }
+}
+
+/**
+ * Converte um array de cupons para o formato compatível com CouponCard
+ */
+export function adaptCouponsForUI(coupons: any[]): any[] {
+  return coupons.map(coupon => adaptCouponToCouponCard(coupon))
 }

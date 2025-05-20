@@ -9,6 +9,7 @@ export type Coupon = {
   title: string
   description: string
   validUntil: string
+  redeemedAt?: string | null // Adicionando redeemedAt como propriedade opcional
 }
 
 type CouponCardProps = {
@@ -37,7 +38,7 @@ export const CouponCard: React.FC<CouponCardProps> = ({ coupon, onClick }) => (
           </span>
         )}
       </div>
-      <h3 className="text-lg text-black font-bold mb-1">{coupon.title}</h3>
+      <h3 className="text-lg font-bold mb-1">{coupon.title}</h3>
       <p className="text-gray-600 text-sm">{coupon.description}</p>
       <div className="mt-4 flex items-center text-xs text-gray-500">
         <Clock size={12} className="mr-1" /> Válido até: {coupon.validUntil}

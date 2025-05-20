@@ -1,7 +1,4 @@
-import { CouponCard } from './CupomCard'
-
-// Remove this type definition and import Coupon from CupomCard instead
-import type { Coupon } from './CupomCard'
+import { CouponCard, Coupon } from './CupomCard'
 
 type CouponGridProps = {
   filteredCoupons: Coupon[]

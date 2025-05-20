@@ -33,6 +33,18 @@ export type Coupon = {
   collection?: CouponCollection
 }
 
+// Para compatibilidade com o CouponCard
+export type CouponCardCompatible = {
+  id: string
+  title: string
+  description: string
+  icon: string
+  category: string
+  used: boolean
+  validUntil: string
+  redeemedAt?: string | null
+}
+
 export type CouponCreateInput = Omit<
   Coupon,
   | 'id'
