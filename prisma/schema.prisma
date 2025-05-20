@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String             @unique
+  password    String
+  name        String
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime           @default(now()) @map("updated_at") @db.Timestamptz
+  collections CouponCollection[]
+
+  @@map("users")
+}
+
+model CouponCollection {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  title       String
+  description String?
+  shareToken  String   @unique @map("share_token")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coupons     Coupon[]
+
+  @@index([userId])
+  @@index([shareToken])
+  @@map("coupon_collections")
+}
+
+model Coupon {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  collectionId String           @map("collection_id") @db.Uuid
+  title        String
+  description  String
+  icon         String
+  category     String
+  isUsed       Boolean          @default(false) @map("is_used")
+  redeemedAt   DateTime?        @map("redeemed_at") @db.Timestamptz
+  validStart   DateTime         @map("valid_start") @db.Timestamptz
+  validUntil   DateTime         @map("valid_until") @db.Timestamptz
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime         @default(now()) @map("updated_at") @db.Timestamptz
+  collection   CouponCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId])
+  @@map("coupons")
+}
