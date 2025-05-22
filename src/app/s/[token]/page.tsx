@@ -18,6 +18,7 @@ type Coupon = {
   category: string
   isUsed: boolean
   validUntil: string
+  validStart?: string | null
   redeemedAt: string | null
 }
 
@@ -71,6 +72,49 @@ export default function SharedCollection() {
     }
   }, [params.token])
 
+  // Verificar se o cupom está disponível para resgate
+  const isCouponAvailable = (coupon: Coupon): boolean => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+    // Se já foi usado, não está disponível
+    if (coupon.isUsed) return false
+
+    // Verificar data de início (se existir)
+    if (coupon.validStart) {
+      const startDate = new Date(coupon.validStart)
+      if (today < startDate) return false
+    }
+
+    // Verificar data de fim
+    const endDate = new Date(coupon.validUntil)
+    if (today > endDate) return false
+
+    return true
+  }
+
+  // Obter status do cupom para exibição
+  const getCouponStatus = (
+    coupon: Coupon
+  ): 'available' | 'used' | 'not-started' | 'expired' => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+    if (coupon.isUsed) return 'used'
+
+    // Verificar se ainda não começou
+    if (coupon.validStart) {
+      const startDate = new Date(coupon.validStart)
+      if (today < startDate) return 'not-started'
+    }
+
+    // Verificar se expirou
+    const endDate = new Date(coupon.validUntil)
+    if (today > endDate) return 'expired'
+
+    return 'available'
+  }
+
   // Filtrar cupons com base nos filtros
   const filteredCoupons =
     collection?.coupons.filter(coupon => {
@@ -78,7 +122,8 @@ export default function SharedCollection() {
         categoryFilter === 'All' || coupon.category === categoryFilter
       const matchesStatus =
         statusFilter === 'All' ||
-        (statusFilter === 'Available' && !coupon.isUsed) ||
+        (statusFilter === 'Available' &&
+          getCouponStatus(coupon) === 'available') ||
         (statusFilter === 'Redeemed' && coupon.isUsed)
       const matchesSearch =
         coupon.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,16 +133,23 @@ export default function SharedCollection() {
     }) || []
 
   // Mapear para o formato esperado pelo CouponCard
-  const mappedCoupons: CouponCardType[] = filteredCoupons.map(coupon => ({
-    id: coupon.id,
-    title: coupon.title,
-    description: coupon.description,
-    icon: coupon.icon,
-    category: coupon.category,
-    used: coupon.isUsed,
-    validUntil: formatDateBR(coupon.validUntil),
-    redeemedAt: coupon.redeemedAt
-  }))
+  const mappedCoupons: CouponCardType[] = filteredCoupons.map(coupon => {
+    const status = getCouponStatus(coupon)
+
+    return {
+      id: coupon.id,
+      title: coupon.title,
+      description: coupon.description,
+      icon: coupon.icon,
+      category: coupon.category,
+      used: coupon.isUsed,
+      validUntil: formatDateBR(coupon.validUntil),
+      validStart: coupon.validStart ? formatDateBR(coupon.validStart) : null,
+      redeemedAt: coupon.redeemedAt,
+      status: status,
+      isAvailable: status === 'available'
+    }
+  })
 
   // Obter todas as categorias únicas
   const categories = collection
@@ -118,11 +170,37 @@ export default function SharedCollection() {
   const closeModal = () => {
     setModalVisible(false)
     setSelectedCoupon(null)
+    setModalMessage('')
   }
 
   // Resgatar um cupom
   const redeemCoupon = async () => {
     if (!selectedCoupon || !params.token) return
+
+    // Verificar se o cupom está disponível para resgate
+    if (!isCouponAvailable(selectedCoupon)) {
+      const status = getCouponStatus(selectedCoupon)
+      let message = ''
+
+      switch (status) {
+        case 'used':
+          message = 'Este cupom já foi resgatado.'
+          break
+        case 'not-started':
+          message = `Este cupom só estará disponível a partir de ${formatDateBR(
+            selectedCoupon.validStart!
+          )}.`
+          break
+        case 'expired':
+          message = 'Este cupom expirou e não pode mais ser resgatado.'
+          break
+        default:
+          message = 'Este cupom não está disponível para resgate no momento.'
+      }
+
+      setModalMessage(message)
+      return
+    }
 
     try {
       const response = await fetch(`/api/share/${params.token}/redeem`, {
@@ -187,7 +265,7 @@ export default function SharedCollection() {
 
   if (error || !collection) {
     return (
-      <div className="min-h-screen bg-pink-50">
+      <div className="text-black in-h-screen bg-pink-50">
         <Header />
         <div className="container mx-auto p-4">
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -205,7 +283,7 @@ export default function SharedCollection() {
   }
 
   return (
-    <div className="min-h-screen bg-pink-50">
+    <div className="text-black min-h-screen bg-pink-50">
       <Header />
 
       <div className="container mx-auto p-4">
@@ -248,7 +326,12 @@ export default function SharedCollection() {
                 icon: selectedCoupon.icon,
                 category: selectedCoupon.category,
                 used: selectedCoupon.isUsed,
-                validUntil: formatDateBR(selectedCoupon.validUntil)
+                validUntil: formatDateBR(selectedCoupon.validUntil),
+                validStart: selectedCoupon.validStart
+                  ? formatDateBR(selectedCoupon.validStart)
+                  : null,
+                status: getCouponStatus(selectedCoupon),
+                isAvailable: isCouponAvailable(selectedCoupon)
               }
             : null
         }

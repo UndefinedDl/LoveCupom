@@ -47,7 +47,8 @@ export default function NewCoupon() {
     description: '',
     icon: 'heart',
     category: 'Encontro',
-    validUntil: '2025-12-31'
+    validUntil: '2025-12-31',
+    validStart: ''
   })
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -58,6 +59,7 @@ export default function NewCoupon() {
     setLoading(true)
 
     try {
+      console.log(formData)
       const response = await fetch(`/api/collections/${params.id}/coupons`, {
         method: 'POST',
         headers: {
@@ -72,7 +74,6 @@ export default function NewCoupon() {
         throw new Error(data.error || 'Erro ao criar cupom')
       }
 
-      // Redirecionar para a página da coleção
       router.push(`/dashboard/collections/${params.id}`)
     } catch (error: any) {
       setError(
@@ -93,7 +94,7 @@ export default function NewCoupon() {
   }
 
   return (
-    <div>
+    <div className="text-black">
       <div className="mb-6">
         <Link
           href={`/dashboard/collections/${params.id}`}
@@ -214,22 +215,45 @@ export default function NewCoupon() {
             </div>
           </div>
 
-          <div className="mb-6">
-            <label
-              htmlFor="validUntil"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Válido até *
-            </label>
-            <input
-              type="date"
-              id="validUntil"
-              name="validUntil"
-              value={formData.validUntil}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label
+                htmlFor="validStart"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Válido a partir de
+              </label>
+              <input
+                type="date"
+                id="validStart"
+                name="validStart"
+                value={formData.validStart}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+                placeholder="Data de início (opcional)"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Deixe em branco para ser válido imediatamente
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="validUntil"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Válido até *
+              </label>
+              <input
+                type="date"
+                id="validUntil"
+                name="validUntil"
+                value={formData.validUntil}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+                required
+              />
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">

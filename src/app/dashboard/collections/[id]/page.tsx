@@ -12,7 +12,7 @@ import {
   Trash2
 } from 'lucide-react'
 import { getIcon } from '@/app/components/GetIcon'
-import { formatDateBR } from '@/lib/utils'
+import { formatDateBR, adaptCouponsForUI } from '@/lib/utils'
 
 type Coupon = {
   id: string
@@ -63,7 +63,7 @@ export default function CollectionPage() {
           throw new Error('Falha ao buscar cupons')
         }
         const couponsData = await couponsResponse.json()
-        setCoupons(couponsData)
+        setCoupons(adaptCouponsForUI(couponsData))
       } catch (err) {
         console.error('Erro:', err)
         setError(
@@ -140,8 +140,8 @@ export default function CollectionPage() {
   }/s/${collection.shareToken}`
 
   return (
-    <div>
-      <div className="mb-6">
+    <div className="text-black">
+      <div className=" mb-6">
         <Link
           href="/dashboard"
           className="text-gray-600 hover:text-gray-900 flex items-center"

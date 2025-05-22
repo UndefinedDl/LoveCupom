@@ -31,7 +31,8 @@ export const createCouponSchema = z.object({
     .min(3, 'A descrição deve ter pelo menos 3 caracteres'),
   icon: z.string().min(1, 'O ícone é obrigatório'),
   category: z.string().min(1, 'A categoria é obrigatória'),
-  validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
+  validUntil: z.string(),
+  validStart: z.string()
 })
 
 export const redeemCouponSchema = z.object({

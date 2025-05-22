@@ -88,7 +88,7 @@ export async function POST(
       )
     }
 
-    const { title, description, icon, category, validUntil } =
+    const { title, description, icon, category, validUntil, validStart } =
       validationResult.data
 
     // Criar o cupom no banco de dados
@@ -98,6 +98,7 @@ export async function POST(
         description,
         icon,
         category,
+        validStart: parseDate(validStart) || new Date(),
         validUntil: parseDate(validUntil) || new Date('2099-12-31'),
         collectionId
       }
