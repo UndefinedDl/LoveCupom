@@ -15,12 +15,12 @@ export const LandingHeader = () => (
         >
           Entrar
         </Link>
-        <Link
+        {/* <Link
           href="/register"
           className="bg-pink-600 text-white px-4 py-2 rounded-md font-medium hover:bg-pink-700 transition-colors"
         >
           Registrar
-        </Link>
+        </Link> */}
       </div>
     </div>
   </header>

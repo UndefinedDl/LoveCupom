@@ -1,8 +1,27 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { LandingHeader } from './components/LandingHeader'
-import { Heart, Gift, Calendar, Share2, Lock, Smile } from 'lucide-react'
+import {
+  Heart,
+  Gift,
+  Calendar,
+  Share2,
+  Lock,
+  Smile,
+  X,
+  Check
+} from 'lucide-react'
+import { exampleCoupons } from '@/constants/cupoms'
+import { plans } from '@/constants/plans'
+import { PricingModal } from './components/PricingModal'
+
+// Modal de Planos
 
 export default function HomePage() {
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-pink-50">
       <LandingHeader />
@@ -19,12 +38,12 @@ export default function HomePage() {
             que importam.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/register"
+            <button
+              onClick={() => setIsPricingModalOpen(true)}
               className="bg-white text-pink-600 px-6 py-3 rounded-md font-bold hover:bg-pink-50 transition-colors text-lg"
             >
               Começar Agora
-            </Link>
+            </button>
             <Link
               href="/login"
               className="bg-pink-700 text-white px-6 py-3 rounded-md font-bold hover:bg-pink-800 transition-colors text-lg"
@@ -65,7 +84,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-black  text-center">
+            <div className="text-black text-center">
               <div className="bg-pink-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="text-pink-600 h-8 w-8" fill="#ec4899" />
               </div>
@@ -82,7 +101,7 @@ export default function HomePage() {
       {/* Examples Section */}
       <section className="py-16 bg-pink-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-black  text-3xl font-bold text-center mb-12">
+          <h2 className="text-black text-3xl font-bold text-center mb-12">
             Exemplos de Cupons
           </h2>
 
@@ -101,7 +120,7 @@ export default function HomePage() {
                       </span>
                     </div>
                   </div>
-                  <h3 className="text-black  text-lg font-bold mb-1">
+                  <h3 className="text-black text-lg font-bold mb-1">
                     {coupon.title}
                   </h3>
                   <p className="text-gray-700 text-sm">{coupon.description}</p>
@@ -116,12 +135,12 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Link
-              href="/register"
+            <button
+              onClick={() => setIsPricingModalOpen(true)}
               className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-8 py-3 rounded-md font-bold hover:from-pink-600 hover:to-red-600 transition-colors inline-flex items-center"
             >
               <Heart className="mr-2" /> Crie Seus Próprios Cupons
-            </Link>
+            </button>
           </div>
         </div>
       </section>
@@ -129,7 +148,7 @@ export default function HomePage() {
       {/* Benefits Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-black  text-3xl font-bold text-center mb-12">
+          <h2 className="text-black text-3xl font-bold text-center mb-12">
             Por Que Escolher Cupons de Amor?
           </h2>
 
@@ -139,7 +158,7 @@ export default function HomePage() {
                 <Lock className="text-pink-600 h-5 w-5" />
               </div>
               <div>
-                <h3 className=" text-black text-xl font-bold mb-2">
+                <h3 className="text-black text-xl font-bold mb-2">
                   Seguro e Privado
                 </h3>
                 <p className="text-gray-600">
@@ -169,7 +188,7 @@ export default function HomePage() {
                 <Smile className="text-pink-600 h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-black  text-xl font-bold mb-2">
+                <h3 className="text-black text-xl font-bold mb-2">
                   Experiências Memoráveis
                 </h3>
                 <p className="text-gray-600">
@@ -184,7 +203,7 @@ export default function HomePage() {
                 <Gift className="text-pink-600 h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-black  text-xl font-bold mb-2">
+                <h3 className="text-black text-xl font-bold mb-2">
                   Presente Personalizado
                 </h3>
                 <p className="text-gray-600">
@@ -205,12 +224,12 @@ export default function HomePage() {
             Comece agora mesmo a criar seus cupons de amor e surpreenda aquela
             pessoa especial.
           </p>
-          <Link
-            href="/register"
+          <button
+            onClick={() => setIsPricingModalOpen(true)}
             className="bg-white text-pink-600 px-8 py-3 rounded-md font-bold hover:bg-pink-50 transition-colors"
           >
-            Criar Conta Gratuita
-          </Link>
+            Ver Planos
+          </button>
         </div>
       </section>
 
@@ -227,46 +246,14 @@ export default function HomePage() {
           </p>
         </div>
       </footer>
+
+      {/* Modal de Planos */}
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+      />
     </div>
   )
 }
 
 // Exemplos de cupons para mostrar na landing page
-const exampleCoupons = [
-  {
-    title: 'Jantar Romântico',
-    description: 'Direito a um jantar em qualquer restaurante à sua escolha',
-    icon: <Heart className="text-red-500" />,
-    category: 'Encontro'
-  },
-  {
-    title: 'Massagem Relaxante',
-    description: 'Direito a uma massagem relaxante de 30 minutos',
-    icon: <Heart className="text-red-500" />,
-    category: 'Bem-estar'
-  },
-  {
-    title: 'Passeio Surpresa',
-    description: 'Um passeio especial planejado com muito carinho',
-    icon: <Gift className="text-purple-500" />,
-    category: 'Aventura'
-  },
-  {
-    title: 'Dia de Filme',
-    description: 'Você escolhe o filme, eu preparo a pipoca e os petiscos',
-    icon: <Gift className="text-purple-500" />,
-    category: 'Lazer'
-  },
-  {
-    title: 'Café da Manhã na Cama',
-    description: 'Acordar com um delicioso café da manhã preparado com amor',
-    icon: <Heart className="text-red-500" />,
-    category: 'Bem-estar'
-  },
-  {
-    title: 'Sessão de Fotos',
-    description: 'Uma sessão de fotos especial só para nós dois',
-    icon: <Calendar className="text-blue-500" />,
-    category: 'Memórias'
-  }
-]
