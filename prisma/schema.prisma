@@ -21,8 +21,30 @@ model User {
   createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime           @default(now()) @map("updated_at") @db.Timestamptz
   collections CouponCollection[]
+  Payment     Payment[]
 
   @@map("users")
+}
+
+model Payment {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?   @map("user_id") @db.Uuid
+  paymentId     String    @unique @map("payment_id") // ID do AbacatePay
+  customerEmail String    @map("customer_email")
+  customerName  String    @map("customer_name")
+  amount        Int // valor em centavos
+  status        String    @default("pending") // 'pending' | 'paid' | 'expired' | 'canceled'
+  planType      String    @map("plan_type") // 'premium'
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz
+  paidAt        DateTime? @map("paid_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@index([customerEmail])
+  @@index([status])
+  @@map("payments")
 }
 
 model CouponCollection {
