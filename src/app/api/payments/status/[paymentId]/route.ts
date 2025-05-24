@@ -1,4 +1,3 @@
-// src/app/api/payments/status/[paymentId]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -7,7 +6,7 @@ export async function GET(
   { params }: { params: { paymentId: string } }
 ) {
   try {
-    const { paymentId } = params
+    const { paymentId } = await params
 
     const payment = await prisma.payment.findUnique({
       where: {

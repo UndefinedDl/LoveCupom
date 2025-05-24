@@ -53,22 +53,29 @@ export class AbacatePayClient {
     data: CreatePixPaymentRequest
   ): Promise<PixPaymentResponse> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/pixQrCode/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.config.apiKey}`
-        },
-        body: JSON.stringify(data)
-      })
+      const url = `${this.config.baseUrl}/pixQrCode/create`
 
-      const responseData = await response.json()
+      console.log('URL', url)
 
-      if (!response.ok || responseData.error) {
-        throw new Error(
-          `AbacatePay API Error: ${responseData.error || response.statusText}`
-        )
+      const response = await axios
+        .post(url, data, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.config.apiKey}`
+          }
+        })
+        .catch(err => {
+          console.log('AbcPay Error', err)
+          return undefined
+        })
+
+      console.log('RES', response)
+
+      if (!response) {
+        throw new Error('No response received from AbacatePay API')
       }
+
+      const responseData = await response.data
 
       return responseData
     } catch (error) {
@@ -86,7 +93,16 @@ export class AbacatePayClient {
             Authorization: `Bearer ${this.config.apiKey}`
           }
         }
-      )
+      ).catch(err => {
+        console.log('AbcPay Error', err)
+        return undefined
+      })
+
+      if (!response) {
+        throw new Error(
+          'Failed to fetch payment information from AbacatePay API'
+        )
+      }
 
       const responseData = await response.json()
 
@@ -110,6 +126,7 @@ export const abacatePayClient = new AbacatePayClient({
   baseUrl: process.env.ABACATEPAY_BASE_URL || 'https://api.abacatepay.com/v1'
 })
 
+import axios from 'axios'
 // Adicionando esquema de validação para registro com pagamento
 import { z } from 'zod'
 

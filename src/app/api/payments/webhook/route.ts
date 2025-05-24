@@ -5,29 +5,53 @@ import { prisma } from '@/lib/prisma'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+    const url = new URL(req.url)
+    const webhookSecret = await url.searchParams.get('secret')
 
     console.log('Webhook AbacatePay recebido:', body)
+    console.log('Webhook secret:', webhookSecret)
+
+    // Validar webhook secret se fornecido
+    if (
+      process.env.ABACATEPAY_WEBHOOK_SECRET &&
+      webhookSecret !== process.env.ABACATEPAY_WEBHOOK_SECRET
+    ) {
+      console.error('Webhook secret inválido')
+      return NextResponse.json(
+        { error: 'Webhook secret inválido' },
+        { status: 401 }
+      )
+    }
 
     // O AbacatePay pode enviar diferentes formatos de webhook
     // Vamos tentar identificar o formato e extrair as informações necessárias
     let paymentId: string
+    let event: string
     let status: string
 
-    // Formato 1: Webhook com payment_id e status diretos
-    if (body.payment_id && body.status) {
-      paymentId = body.payment_id
+    // Formato 1: Evento billing.paid (para cobranças)
+    if (body.event === 'billing.paid' && body.data?.id) {
+      paymentId = body.data.id
+      event = body.event
+      status = 'PAID'
+    }
+    // Formato 2: Evento direto do PIX QRCode
+    else if (body.event && body.data?.id) {
+      paymentId = body.data.id
+      event = body.event
+      status = body.data.status || 'PAID'
+    }
+    // Formato 3: Dados diretos (sem evento)
+    else if (body.id && body.status) {
+      paymentId = body.id
+      event = `payment.${body.status.toLowerCase()}`
       status = body.status
     }
-    // Formato 2: Webhook com objeto data
-    else if (body.data && body.data.id) {
-      paymentId = body.data.id
-      status =
-        body.data.status || body.event?.replace('payment.', '') || 'unknown'
-    }
-    // Formato 3: Webhook com id direto
-    else if (body.id) {
-      paymentId = body.id
-      status = body.status || 'paid' // Assumir que é pagamento se não especificar
+    // Formato 4: Para PIX QRCode direto
+    else if (body.pixId || body.pixQrCodeId) {
+      paymentId = body.pixId || body.pixQrCodeId
+      event = 'pix.paid'
+      status = body.status || 'PAID'
     } else {
       console.error('Formato de webhook não reconhecido:', body)
       return NextResponse.json(
@@ -35,6 +59,15 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    console.log(
+      'Dados extraídos - ID:',
+      paymentId,
+      'Event:',
+      event,
+      'Status:',
+      status
+    )
 
     // Buscar o pagamento no banco de dados
     const payment = await prisma.payment.findUnique({
@@ -53,16 +86,25 @@ export async function POST(req: NextRequest) {
 
     // Mapear status do AbacatePay para nosso sistema
     let mappedStatus = 'pending'
-    if (status === 'paid' || status === 'approved' || status === 'completed') {
+    const upperStatus = status.toUpperCase()
+
+    if (
+      upperStatus === 'PAID' ||
+      upperStatus === 'APPROVED' ||
+      upperStatus === 'COMPLETED'
+    ) {
       mappedStatus = 'paid'
-    } else if (status === 'expired' || status === 'timeout') {
+    } else if (upperStatus === 'EXPIRED' || upperStatus === 'TIMEOUT') {
       mappedStatus = 'expired'
-    } else if (status === 'canceled' || status === 'cancelled') {
+    } else if (upperStatus === 'CANCELED' || upperStatus === 'CANCELLED') {
       mappedStatus = 'canceled'
+    } else if (upperStatus === 'PENDING') {
+      mappedStatus = 'pending'
     }
 
     if (payment.status === mappedStatus) {
       // Status já foi processado
+      console.log('Webhook já processado para pagamento:', paymentId)
       return NextResponse.json({ message: 'Webhook já processado' })
     }
 
@@ -82,9 +124,21 @@ export async function POST(req: NextRequest) {
       data: updateData
     })
 
-    console.log('Pagamento atualizado:', paymentId, 'Status:', mappedStatus)
+    console.log(
+      'Pagamento atualizado:',
+      paymentId,
+      'Novo status:',
+      mappedStatus,
+      'Evento:',
+      event
+    )
 
-    return NextResponse.json({ message: 'Webhook processado com sucesso' })
+    return NextResponse.json({
+      message: 'Webhook processado com sucesso',
+      paymentId,
+      status: mappedStatus,
+      event
+    })
   } catch (error) {
     console.error('Erro no webhook AbacatePay:', error)
     return NextResponse.json(
