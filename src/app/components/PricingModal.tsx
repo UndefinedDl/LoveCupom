@@ -313,6 +313,7 @@ function PixPaymentStep({
   const [copied, setCopied] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState(paymentData.status)
   const [timeLeft, setTimeLeft] = useState<string>('')
+  const [isChecking, setIsChecking] = useState(false)
 
   // Função para copiar código PIX
   const handleCopyPix = () => {
@@ -327,6 +328,7 @@ function PixPaymentStep({
 
     const checkPaymentStatus = async () => {
       try {
+        setIsChecking(true)
         const response = await fetch(
           `/api/payments/status/${paymentData.paymentId}`
         )
@@ -343,6 +345,8 @@ function PixPaymentStep({
         }
       } catch (error) {
         console.error('Erro ao verificar status do pagamento:', error)
+      } finally {
+        setIsChecking(false)
       }
     }
 
@@ -377,15 +381,41 @@ function PixPaymentStep({
   if (paymentStatus === 'paid') {
     return (
       <div className="p-6 text-center">
-        <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-          <Check className="text-green-600 h-8 w-8" />
+        <div className="bg-green-100 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+          <Check className="text-green-600 h-10 w-10" />
         </div>
         <h3 className="text-xl font-bold text-green-600 mb-2">
-          Pagamento Confirmado!
+          🎉 Pagamento Confirmado!
         </h3>
         <p className="text-gray-600 mb-4">
-          Redirecionando para criar sua conta...
+          Seu plano Base foi ativado com sucesso!
         </p>
+        <div className="bg-green-50 p-3 rounded-md mb-4">
+          <p className="text-sm text-green-700">
+            Redirecionando para criar sua conta premium...
+          </p>
+        </div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500 mx-auto"></div>
+      </div>
+    )
+  }
+
+  if (paymentStatus === 'expired') {
+    return (
+      <div className="p-6 text-center">
+        <div className="bg-red-100 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+          <X className="text-red-600 h-10 w-10" />
+        </div>
+        <h3 className="text-xl font-bold text-red-600 mb-2">PIX Expirado</h3>
+        <p className="text-gray-600 mb-4">
+          O tempo para pagamento expirou. Gere um novo PIX para continuar.
+        </p>
+        <button
+          onClick={onClose}
+          className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition-colors"
+        >
+          Tentar Novamente
+        </button>
       </div>
     )
   }
@@ -405,7 +435,30 @@ function PixPaymentStep({
           <p className="text-gray-600 mb-2">
             Escaneie o QR Code ou copie o código PIX
           </p>
-          <p className="text-sm text-gray-500">Tempo restante: {timeLeft}</p>
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm text-gray-500">
+              Tempo restante: {timeLeft}
+            </span>
+            {isChecking && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-500"></div>
+            )}
+          </div>
+        </div>
+
+        {/* Status de aguardando confirmação */}
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+          <div className="flex items-center">
+            <div className="animate-pulse flex items-center">
+              <div className="rounded-full h-3 w-3 bg-blue-400 mr-2"></div>
+              <p className="text-sm text-blue-700 font-medium">
+                Aguardando confirmação do pagamento...
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-blue-600 mt-1">
+            Assim que o pagamento for processado, você será redirecionado
+            automaticamente.
+          </p>
         </div>
 
         {/* QR Code */}
@@ -431,19 +484,42 @@ function PixPaymentStep({
             />
             <button
               onClick={handleCopyPix}
-              className="bg-pink-500 text-white px-4 py-2 rounded-r-md hover:bg-pink-600 transition-colors"
+              className="bg-pink-500 text-white px-4 py-2 rounded-r-md hover:bg-pink-600 transition-colors flex items-center gap-1"
             >
-              {copied ? <Check className="h-4 w-4" /> : 'Copiar'}
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  <span className="hidden sm:inline">Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">Copiar</span>
+                  📋
+                </>
+              )}
             </button>
           </div>
         </div>
 
+        {/* Instruções */}
         <div className="bg-blue-50 p-4 rounded-md text-sm text-blue-800">
-          <p className="font-medium mb-1">Instruções:</p>
-          <p>1. Abra seu app do banco</p>
-          <p>2. Escaneie o QR Code ou cole o código PIX</p>
-          <p>3. Confirme o pagamento de R$ 7,99</p>
-          <p>4. Aguarde a confirmação automática</p>
+          <p className="font-medium mb-2">📱 Como pagar:</p>
+          <ol className="list-decimal list-inside space-y-1">
+            <li>Abra seu app do banco ou carteira digital</li>
+            <li>Escolha a opção PIX</li>
+            <li>Escaneie o QR Code ou cole o código acima</li>
+            <li>Confirme o pagamento de R$ 7,99</li>
+            <li>Aguarde a confirmação automática</li>
+          </ol>
+        </div>
+
+        {/* Dicas */}
+        <div className="mt-4 p-3 bg-yellow-50 rounded-md">
+          <p className="text-xs text-yellow-800">
+            💡 <strong>Dica:</strong> O pagamento é processado instantaneamente.
+            Mantenha esta tela aberta para ser redirecionado automaticamente
+            após a confirmação.
+          </p>
         </div>
       </div>
     </>

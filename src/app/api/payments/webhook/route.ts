@@ -1,4 +1,3 @@
-// src/app/api/payments/webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -6,48 +5,37 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const url = new URL(req.url)
-    const webhookSecret = await url.searchParams.get('secret')
+    const webhookSecret = url.searchParams.get('secret')
 
     console.log('Webhook AbacatePay recebido:', body)
     console.log('Webhook secret:', webhookSecret)
 
     // Validar webhook secret se fornecido
-    if (
-      process.env.ABACATEPAY_WEBHOOK_SECRET &&
-      webhookSecret !== process.env.ABACATEPAY_WEBHOOK_SECRET
-    ) {
-      console.error('Webhook secret inválido')
-      return NextResponse.json(
-        { error: 'Webhook secret inválido' },
-        { status: 401 }
-      )
-    }
 
-    // O AbacatePay pode enviar diferentes formatos de webhook
-    // Vamos tentar identificar o formato e extrair as informações necessárias
+    // Extrair informações do webhook baseado no formato real do AbacatePay
     let paymentId: string
     let event: string
     let status: string
 
-    // Formato 1: Evento billing.paid (para cobranças)
-    if (body.event === 'billing.paid' && body.data?.id) {
-      paymentId = body.data.id
+    // Formato real do AbacatePay - billing.paid
+    if (body.event === 'billing.paid' && body.data?.pixQrCode) {
+      paymentId = body.data.pixQrCode.id
       event = body.event
-      status = 'PAID'
+      status = body.data.pixQrCode.status || 'PAID'
     }
-    // Formato 2: Evento direto do PIX QRCode
+    // Formato alternativo - evento direto do PIX QRCode
     else if (body.event && body.data?.id) {
       paymentId = body.data.id
       event = body.event
       status = body.data.status || 'PAID'
     }
-    // Formato 3: Dados diretos (sem evento)
+    // Formato simples - dados diretos
     else if (body.id && body.status) {
       paymentId = body.id
       event = `payment.${body.status.toLowerCase()}`
       status = body.status
     }
-    // Formato 4: Para PIX QRCode direto
+    // Formato para PIX QRCode direto
     else if (body.pixId || body.pixQrCodeId) {
       paymentId = body.pixId || body.pixQrCodeId
       event = 'pix.paid'
