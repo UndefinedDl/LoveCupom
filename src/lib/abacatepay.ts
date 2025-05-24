@@ -139,7 +139,7 @@ export const registerWithPaymentSchema = z
       .string()
       .min(6, 'A senha deve ter pelo menos 6 caracteres'),
     paymentId: z.string().optional(),
-    planType: z.string().default('free')
+    planType: z.string().default('base')
   })
   .refine(data => data.password === data.confirmPassword, {
     message: 'As senhas não conferem',

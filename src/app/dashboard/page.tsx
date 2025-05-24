@@ -57,7 +57,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div>
+    <div className="text-black">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Bem-vindo, {session?.user?.name}</h1>
         <Link

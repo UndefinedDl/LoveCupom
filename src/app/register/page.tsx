@@ -1,8 +1,8 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { RegisterInput } from '@/lib/validations'
 import { Heart } from 'lucide-react'
 
@@ -12,10 +12,23 @@ export default function Register() {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    paymentId: ''
   })
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const emailFromURL = searchParams.get('email')
+    const paymentFromURL = searchParams.get('payment')
+
+    setFormData(prev => ({
+      ...prev,
+      email: emailFromURL || '',
+      paymentId: paymentFromURL || ''
+    }))
+  }, [searchParams])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
