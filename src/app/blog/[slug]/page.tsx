@@ -5,15 +5,13 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-interface BlogPostPageProps {
-  params: { slug: string }
-}
-
 // Dados dos posts (em produção viria de um CMS ou banco de dados)
 
 export async function generateMetadata({
   params
-}: BlogPostPageProps): Promise<Metadata> {
+}: {
+  params: { slug: string }
+}): Promise<Metadata> {
   const post = blogContent[params.slug as keyof typeof blogContent]
 
   if (!post) {
