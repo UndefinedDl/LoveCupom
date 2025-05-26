@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { createCouponSchema } from '@/lib/validations'
 import { parseDate } from '@/lib/utils'
 import { canCreateCoupon } from '@/lib/planLimits'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/constants/constants'
 
 // GET /api/collections/[collectionId]/coupons - Obter todos os cupons de uma coleção
 export async function GET(

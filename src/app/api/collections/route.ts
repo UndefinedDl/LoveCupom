@@ -5,7 +5,7 @@ import { createCollectionSchema } from '@/lib/validations'
 import { generateShareToken } from '@/lib/utils'
 
 import { canCreateCollection } from '@/lib/planLimits'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '@/constants/constants'
 
 // GET /api/collections - Obter todas as coleções do usuário
 export async function GET() {

@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 
 import { getUserUsageStats } from '@/lib/planLimits'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/constants/constants'
 
 // GET /api/user/stats - Obter estatísticas de uso do usuário
 export async function GET() {
