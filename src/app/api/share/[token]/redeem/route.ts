@@ -6,12 +6,16 @@ import { sendCouponRedeemedEmail } from '@/lib/resend'
 import { formatDateBR } from '@/lib/utils'
 
 // POST /api/share/[token]/redeem - Resgatar um cupom
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+export async function POST(req: NextRequest) {
   try {
-    const { token } = params
+    // Extrai o token da URL
+    const match = req.nextUrl.pathname.match(/\/share\/([^/]+)\/redeem/)
+    const token = match ? match[1] : null
+
+    if (!token) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 400 })
+    }
+
     const body = await req.json()
 
     // Validar dados de entrada
