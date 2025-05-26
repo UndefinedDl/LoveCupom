@@ -46,7 +46,7 @@ export async function generateMetadata({
   }
 }
 
-export default function BlogPostPage({ params }: BlogPostPageProps) {
+export default function BlogPostPage({ params }: { params: { slug: string } }) {
   const post = blogContent[params.slug as keyof typeof blogContent]
 
   if (!post) {
