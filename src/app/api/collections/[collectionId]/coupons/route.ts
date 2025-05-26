@@ -1,3 +1,5 @@
+// src/app/api/collections/[collectionId]/coupons/route.ts - VERSÃO CORRIGIDA
+
 import { getServerSession } from 'next-auth/next'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -108,6 +110,18 @@ export async function POST(
     const { title, description, icon, category, validUntil, validStart } =
       validationResult.data
 
+    // CORRIGIDO: Processar data de início - se estiver em branco, usar dia anterior
+    let processedValidStart: Date
+    if (validStart && validStart.trim() !== '') {
+      processedValidStart = parseDate(validStart) || new Date()
+    } else {
+      // Se validStart está em branco, usar ontem para garantir disponibilidade imediata
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      yesterday.setHours(0, 0, 0, 0) // Início do dia
+      processedValidStart = yesterday
+    }
+
     // Criar o cupom no banco de dados
     const newCoupon = await prisma.coupon.create({
       data: {
@@ -115,10 +129,18 @@ export async function POST(
         description,
         icon,
         category,
-        validStart: parseDate(validStart) || new Date(),
+        validStart: processedValidStart,
         validUntil: parseDate(validUntil) || new Date('2099-12-31'),
         collectionId
       }
+    })
+
+    console.log('Cupom criado com sucesso:', {
+      id: newCoupon.id,
+      title: newCoupon.title,
+      validStart: newCoupon.validStart,
+      validUntil: newCoupon.validUntil,
+      wasStartDateEmpty: !validStart || validStart.trim() === ''
     })
 
     return NextResponse.json(newCoupon, { status: 201 })

@@ -1,3 +1,4 @@
+// src/app/s/[token]/page.tsx - VERSÃO CORRIGIDA
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -72,7 +73,7 @@ export default function SharedCollection() {
     }
   }, [params.token])
 
-  // Verificar se o cupom está disponível para resgate
+  // CORRIGIDO: Verificar se o cupom está disponível para resgate
   const isCouponAvailable = (coupon: Coupon): boolean => {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -80,11 +81,12 @@ export default function SharedCollection() {
     // Se já foi usado, não está disponível
     if (coupon.isUsed) return false
 
-    // Verificar data de início (se existir)
+    // Verificar data de início
     if (coupon.validStart) {
       const startDate = new Date(coupon.validStart)
       if (today < startDate) return false
     }
+    // Se validStart é null/undefined, considera que já está disponível
 
     // Verificar data de fim
     const endDate = new Date(coupon.validUntil)
@@ -93,7 +95,7 @@ export default function SharedCollection() {
     return true
   }
 
-  // Obter status do cupom para exibição
+  // CORRIGIDO: Obter status do cupom para exibição
   const getCouponStatus = (
     coupon: Coupon
   ): 'available' | 'used' | 'not-started' | 'expired' => {
@@ -107,6 +109,7 @@ export default function SharedCollection() {
       const startDate = new Date(coupon.validStart)
       if (today < startDate) return 'not-started'
     }
+    // Se validStart é null/undefined, considera que já começou
 
     // Verificar se expirou
     const endDate = new Date(coupon.validUntil)
@@ -265,7 +268,7 @@ export default function SharedCollection() {
 
   if (error || !collection) {
     return (
-      <div className="text-black in-h-screen bg-pink-50">
+      <div className="text-black min-h-screen bg-pink-50">
         <Header />
         <div className="container mx-auto p-4">
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
