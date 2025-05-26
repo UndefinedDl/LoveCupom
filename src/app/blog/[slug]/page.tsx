@@ -10,9 +10,10 @@ import { notFound } from 'next/navigation'
 export async function generateMetadata({
   params
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
-  const post = blogContent[params.slug as keyof typeof blogContent]
+  const { slug } = await params
+  const post = blogContent[slug as keyof typeof blogContent]
 
   if (!post) {
     return {
@@ -39,13 +40,18 @@ export async function generateMetadata({
       description: post.metaDescription
     },
     alternates: {
-      canonical: `https://lovecupoms.store/blog/${params.slug}`
+      canonical: `https://lovecupoms.store/blog/${slug}`
     }
   }
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = blogContent[params.slug as keyof typeof blogContent]
+export default async function BlogPostPage({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const post = blogContent[slug as keyof typeof blogContent]
 
   if (!post) {
     notFound()
@@ -73,7 +79,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
     dateModified: post.publishDate,
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://lovecupoms.store/blog/${params.slug}`
+      '@id': `https://lovecupoms.store/blog/${slug}`
     },
     keywords: post.keywords.join(', '),
     wordCount: post.content.split(' ').length,
@@ -183,12 +189,12 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
               </h3>
               <div className="grid md:grid-cols-3 gap-6">
                 {Object.entries(blogContent)
-                  .filter(([slug]) => slug !== params.slug)
+                  .filter(([postSlug]) => postSlug !== slug)
                   .slice(0, 3)
-                  .map(([slug, relatedPost]) => (
+                  .map(([postSlug, relatedPost]) => (
                     <Link
-                      key={slug}
-                      href={`/blog/${slug}`}
+                      key={postSlug}
+                      href={`/blog/${postSlug}`}
                       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                     >
                       <div className="aspect-video bg-gradient-to-br from-pink-100 to-red-100 flex items-center justify-center">
