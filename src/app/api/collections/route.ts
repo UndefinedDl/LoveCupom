@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { createCollectionSchema } from '@/lib/validations'
 import { generateShareToken } from '@/lib/utils'
 import { authOptions } from '../auth/[...nextauth]/route'
+import { canCreateCollection } from '@/lib/planLimits'
 
 // GET /api/collections - Obter todas as coleções do usuário
 export async function GET() {
@@ -41,6 +42,22 @@ export async function POST(req: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    // Verificar se o usuário pode criar uma nova coleção
+    const limitCheck = await canCreateCollection(session.user.id)
+
+    if (!limitCheck.canCreate) {
+      return NextResponse.json(
+        {
+          error: limitCheck.errorMessage,
+          limitReached: true,
+          currentCount: limitCheck.currentCount,
+          maxAllowed: limitCheck.maxAllowed,
+          planType: limitCheck.planType
+        },
+        { status: 403 }
+      )
     }
 
     const body = await req.json()

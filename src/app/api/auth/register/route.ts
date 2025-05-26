@@ -1,9 +1,9 @@
-// src/app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { registerSchema } from '@/lib/validations'
 import { registerWithPaymentSchema } from '@/lib/abacatepay'
+import { getPlanLimits } from '@/constants/plans'
 
 // POST /api/auth/register - Registrar um novo usuário
 export async function POST(req: NextRequest) {
@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
 
     if (!paymentId) {
       console.log('SEM ID DE PAGAMENTO')
-      return
+      return NextResponse.json(
+        { error: 'ID de pagamento é obrigatório' },
+        { status: 400 }
+      )
     }
 
     const hasPaymentData = !!paymentId
@@ -38,13 +41,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { name, email, password } = validationResult.data
-    const planType = hasPaymentData ? 'base' : 'free'
 
     console.log('Registrando usuário com dados:', {
       name,
       email,
       paymentId,
-      planType,
       hasPaymentData
     })
 
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
 
     // Se há pagamento, verificar se é válido e pertence ao email
     let paymentData = null
+    let planType = 'free'
     if (paymentId) {
       paymentData = await prisma.payment.findUnique({
         where: { paymentId }
@@ -96,18 +98,19 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         )
       }
+
+      planType = paymentData.planType
     }
+
+    // Obter limites do plano
+    const planLimits = getPlanLimits(planType)
 
     // Criptografar a senha
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Calcular data de expiração do plano (se aplicável)
     let planExpiresAt = null
-    if (planType === 'base') {
-      // Plano Base não expira (pagamento único)
-      planExpiresAt = null
-    }
-    // Se no futuro houver planos que expiram, adicione aqui.
+    // Todos os planos são pagamento único, não expiram
 
     // Usar transação para garantir consistência
     const result = await prisma.$transaction(async tx => {
@@ -118,7 +121,9 @@ export async function POST(req: NextRequest) {
           email,
           password: hashedPassword,
           planType,
-          planExpiresAt
+          planExpiresAt,
+          maxCollections: planLimits.maxCollections,
+          maxCupoms: planLimits.maxCupons
         }
       })
 
@@ -148,6 +153,8 @@ export async function POST(req: NextRequest) {
       userId: result.id,
       email: result.email,
       planType: result.planType,
+      maxCollections: result.maxCollections,
+      maxCupoms: result.maxCupoms,
       paymentLinked: !!paymentData
     })
 
@@ -155,7 +162,7 @@ export async function POST(req: NextRequest) {
       {
         user: userWithoutPassword,
         message: paymentData
-          ? 'Conta premium criada com sucesso!'
+          ? `Conta ${planType} criada com sucesso!`
           : 'Usuário criado com sucesso!',
         planActivated: !!paymentData
       },

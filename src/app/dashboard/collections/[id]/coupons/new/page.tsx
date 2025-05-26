@@ -3,7 +3,14 @@
 import { FormEvent, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Heart, Gift, Calendar } from 'lucide-react'
+import {
+  ArrowLeft,
+  Heart,
+  Gift,
+  Calendar,
+  AlertCircle,
+  Crown
+} from 'lucide-react'
 import { CreateCouponInput } from '@/lib/validations'
 
 // Categorias pré-definidas
@@ -52,6 +59,8 @@ export default function NewCoupon() {
   })
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showLimitModal, setShowLimitModal] = useState(false)
+  const [limitInfo, setLimitInfo] = useState<any>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -71,6 +80,13 @@ export default function NewCoupon() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Verificar se é um erro de limite
+        if (response.status === 403 && data.limitReached) {
+          setLimitInfo(data)
+          setShowLimitModal(true)
+          setLoading(false)
+          return
+        }
         throw new Error(data.error || 'Erro ao criar cupom')
       }
 
@@ -274,6 +290,54 @@ export default function NewCoupon() {
           </div>
         </form>
       </div>
+
+      {/* Modal de Limite Atingido */}
+      {showLimitModal && limitInfo && (
+        <div className="fixed inset-0 bg-transparent bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <Crown className="h-8 w-8 text-yellow-500 mr-3" />
+                <h3 className="text-xl font-bold">Limite de Cupons Atingido</h3>
+              </div>
+
+              <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-4">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-orange-400 mr-2" />
+                  <p className="text-sm text-orange-800">
+                    Você já possui {limitInfo.currentCount} de{' '}
+                    {limitInfo.maxAllowed} cupons do seu plano{' '}
+                    {limitInfo.planType}.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-gray-600 mb-6">
+                Para criar mais cupons, faça upgrade para um plano superior e
+                tenha acesso a mais recursos!
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLimitModal(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Voltar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLimitModal(false)
+                    window.location.href = '/#pricing'
+                  }}
+                  className="flex-1 bg-gradient-to-r from-pink-500 to-red-500 text-white py-2 px-4 rounded-md hover:from-pink-600 hover:to-red-600 transition-colors"
+                >
+                  Fazer Upgrade
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

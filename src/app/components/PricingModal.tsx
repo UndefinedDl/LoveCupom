@@ -17,17 +17,9 @@ export const PricingModal = ({
 
   if (!isOpen) return null
 
-  const handlePlanSelection = (planName: string) => {
-    if (planName === 'Base') {
-      // Para o plano Base, abrir modal de pagamento PIX
-      setSelectedPlan(planName)
-      setShowPaymentModal(true)
-    } else {
-      // Para outros planos, redirecionar para registro (implementação futura)
-      console.log(`Plano selecionado: ${planName}`)
-      alert(`Plano ${planName} será implementado em breve!`)
-      // window.location.href = '/register'
-    }
+  const handlePlanSelection = (planType: string) => {
+    setSelectedPlan(planType)
+    setShowPaymentModal(true)
   }
 
   return (
@@ -92,11 +84,9 @@ export const PricingModal = ({
 
                   <button
                     className={`w-full py-3 px-4 rounded-md font-medium text-white bg-gradient-to-r ${plan.color} hover:opacity-90 transition-opacity flex items-center justify-center`}
-                    onClick={() => handlePlanSelection(plan.name)}
+                    onClick={() => handlePlanSelection(plan.planType)}
                   >
-                    {plan.name === 'Base' && (
-                      <CreditCard className="mr-2 h-4 w-4" />
-                    )}
+                    <CreditCard className="mr-2 h-4 w-4" />
                     Escolher {plan.name}
                   </button>
                 </div>
@@ -104,17 +94,18 @@ export const PricingModal = ({
             </div>
 
             <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Plano Base: Pagamento único via PIX</p>
-              <p>Outros planos incluem 2 dias de teste gratuito</p>
-              <p>Cancele a qualquer momento, sem multas</p>
+              <p>Todos os planos: Pagamento único via PIX</p>
+              <p>Acesso imediato após confirmação do pagamento</p>
+              <p>Sem mensalidades ou taxas ocultas</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Modal de Pagamento PIX */}
-      {showPaymentModal && selectedPlan === 'Base' && (
+      {showPaymentModal && selectedPlan && (
         <PaymentModal
+          planType={selectedPlan}
           onClose={() => {
             setShowPaymentModal(false)
             setSelectedPlan(null)
@@ -132,9 +123,11 @@ export const PricingModal = ({
 
 // Componente do Modal de Pagamento PIX
 function PaymentModal({
+  planType,
   onClose,
   onPaymentSuccess
 }: {
+  planType: string
   onClose: () => void
   onPaymentSuccess: () => void
 }) {
@@ -149,6 +142,8 @@ function PaymentModal({
   const [paymentData, setPaymentData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const selectedPlan = plans.find(p => p.planType === planType)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -162,7 +157,7 @@ function PaymentModal({
         },
         body: JSON.stringify({
           ...formData,
-          planType: 'base'
+          planType
         })
       })
 
@@ -191,8 +186,12 @@ function PaymentModal({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
         {step === 'form' ? (
           <>
-            <div className="bg-gradient-to-r from-pink-400 to-pink-500 p-4 flex justify-between items-center">
-              <h3 className="text-white font-bold text-lg">Plano Base</h3>
+            <div
+              className={`bg-gradient-to-r ${selectedPlan?.color} p-4 flex justify-between items-center`}
+            >
+              <h3 className="text-white font-bold text-lg">
+                Plano {selectedPlan?.name}
+              </h3>
               <button onClick={onClose} className="text-white">
                 <X />
               </button>
@@ -203,12 +202,14 @@ function PaymentModal({
                 <div className="bg-pink-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                   <CreditCard className="text-pink-600 h-8 w-8" />
                 </div>
-                <h4 className="text-xl font-bold mb-2">R$ 7,99</h4>
+                <h4 className="text-xl font-bold mb-2">
+                  {selectedPlan?.price}
+                </h4>
                 <p className="text-gray-600">Pagamento único via PIX</p>
                 <div className="mt-4 text-sm text-gray-500">
-                  <p>✓ Até 3 cupons</p>
-                  <p>✓ 1 coleção</p>
-                  <p>✓ Compartilhamento seguro</p>
+                  {selectedPlan?.features.map((feature, index) => (
+                    <p key={index}>✓ {feature}</p>
+                  ))}
                 </div>
               </div>
 
@@ -278,7 +279,7 @@ function PaymentModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white py-2 rounded-md font-medium hover:from-pink-500 hover:to-pink-600 transition-colors disabled:opacity-70"
+                  className={`w-full bg-gradient-to-r ${selectedPlan?.color} text-white py-2 rounded-md font-medium hover:opacity-90 transition-opacity disabled:opacity-70`}
                 >
                   {loading ? 'Gerando PIX...' : 'Gerar PIX'}
                 </button>
@@ -289,6 +290,7 @@ function PaymentModal({
           <PixPaymentStep
             paymentData={paymentData}
             customerEmail={formData.customerEmail}
+            planName={selectedPlan?.name || ''}
             onClose={onClose}
             onPaymentConfirmed={onPaymentSuccess}
           />
@@ -302,11 +304,13 @@ function PaymentModal({
 function PixPaymentStep({
   paymentData,
   customerEmail,
+  planName,
   onClose,
   onPaymentConfirmed
 }: {
   paymentData: any
   customerEmail: string
+  planName: string
   onClose: () => void
   onPaymentConfirmed: () => void
 }) {
@@ -388,11 +392,11 @@ function PixPaymentStep({
           🎉 Pagamento Confirmado!
         </h3>
         <p className="text-gray-600 mb-4">
-          Seu plano Base foi ativado com sucesso!
+          Seu plano {planName} foi ativado com sucesso!
         </p>
         <div className="bg-green-50 p-3 rounded-md mb-4">
           <p className="text-sm text-green-700">
-            Redirecionando para criar sua conta premium...
+            Redirecionando para criar sua conta...
           </p>
         </div>
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500 mx-auto"></div>
@@ -423,7 +427,9 @@ function PixPaymentStep({
   return (
     <>
       <div className="bg-gradient-to-r from-pink-400 to-pink-500 p-4 flex justify-between items-center">
-        <h3 className="text-white font-bold text-lg">Pagamento PIX</h3>
+        <h3 className="text-white font-bold text-lg">
+          Pagamento PIX - {planName}
+        </h3>
         <button onClick={onClose} className="text-white">
           <X />
         </button>
@@ -431,7 +437,11 @@ function PixPaymentStep({
 
       <div className="p-6">
         <div className="text-center mb-6">
-          <h4 className="text-lg font-bold mb-2">R$ 7,99</h4>
+          <h4 className="text-lg font-bold mb-2">
+            {paymentData.amount / 100
+              ? `R$ ${(paymentData.amount / 100).toFixed(2).replace('.', ',')}`
+              : paymentData.price}
+          </h4>
           <p className="text-gray-600 mb-2">
             Escaneie o QR Code ou copie o código PIX
           </p>
@@ -508,7 +518,7 @@ function PixPaymentStep({
             <li>Abra seu app do banco ou carteira digital</li>
             <li>Escolha a opção PIX</li>
             <li>Escaneie o QR Code ou cole o código acima</li>
-            <li>Confirme o pagamento de R$ 7,99</li>
+            <li>Confirme o pagamento</li>
             <li>Aguarde a confirmação automática</li>
           </ol>
         </div>

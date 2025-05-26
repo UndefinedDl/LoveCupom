@@ -54,7 +54,7 @@ export default function NewCollection() {
   }
 
   return (
-    <div>
+    <div className="text-black">
       <div className="mb-6">
         <Link
           href="/dashboard"

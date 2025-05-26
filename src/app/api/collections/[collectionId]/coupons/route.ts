@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { createCouponSchema } from '@/lib/validations'
 import { parseDate } from '@/lib/utils'
+import { canCreateCoupon } from '@/lib/planLimits'
 
 // GET /api/collections/[collectionId]/coupons - Obter todos os cupons de uma coleção
 export async function GET(
@@ -73,6 +74,22 @@ export async function POST(
       return NextResponse.json(
         { error: 'Coleção não encontrada ou sem permissão' },
         { status: 404 }
+      )
+    }
+
+    // Verificar se o usuário pode criar um novo cupom
+    const limitCheck = await canCreateCoupon(session.user.id, collectionId)
+
+    if (!limitCheck.canCreate) {
+      return NextResponse.json(
+        {
+          error: limitCheck.errorMessage,
+          limitReached: true,
+          currentCount: limitCheck.currentCount,
+          maxAllowed: limitCheck.maxAllowed,
+          planType: limitCheck.planType
+        },
+        { status: 403 }
       )
     }
 

@@ -3,14 +3,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { abacatePayClient } from '@/lib/abacatepay'
+import { plans } from '@/constants/plans'
 
 const createPixSchema = z.object({
   customerName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   customerEmail: z.string().email('Email inválido'),
   customerDocument: z.string().optional(),
   customerPhone: z.string().optional(),
-  planType: z.string().default('base')
+  planType: z.enum(['base', 'premium', 'vip']).default('base')
 })
+
+// Preços dos planos em centavos
+const PLAN_PRICES = {
+  base: 799, // R$ 7,99
+  premium: 1499, // R$ 14,99
+  vip: 2499 // R$ 24,99
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,10 +42,11 @@ export async function POST(req: NextRequest) {
       planType
     } = validationResult.data
 
-    // Verificar se já existe um pagamento pendente para este email
+    // Verificar se já existe um pagamento pendente para este email e plano
     const existingPayment = await prisma.payment.findFirst({
       where: {
         customerEmail,
+        planType,
         status: 'pending',
         expiresAt: {
           gt: new Date()
@@ -58,15 +67,27 @@ export async function POST(req: NextRequest) {
         copyPaste: abacatePayment.data.brCode,
         amount: existingPayment.amount,
         expiresAt: existingPayment.expiresAt,
-        status: existingPayment.status
+        status: existingPayment.status,
+        planType: existingPayment.planType
       })
     }
 
+    // Obter dados do plano
+    const selectedPlan = plans.find(p => p.planType === planType)
+    if (!selectedPlan) {
+      return NextResponse.json(
+        { error: 'Plano não encontrado' },
+        { status: 400 }
+      )
+    }
+
+    const amount = PLAN_PRICES[planType]
+
     // Criar novo pagamento no AbacatePay
     const pixPayment = await abacatePayClient.createPixPayment({
-      amount: 799, // R$ 7,99 em centavos
+      amount,
       expiresIn: 3600, // 1 hora em segundos
-      description: 'Plano Base - Cupons de Amor',
+      description: `Plano ${selectedPlan.name} - Cupons de Amor`,
       customer: {
         name: customerName,
         email: customerEmail,
@@ -86,9 +107,9 @@ export async function POST(req: NextRequest) {
         paymentId: pixPayment.data.id,
         customerEmail,
         customerName,
-        amount: 799,
+        amount,
         status: 'pending',
-        planType: planType || 'base',
+        planType,
         expiresAt: new Date(pixPayment.data.expiresAt)
       }
     })
@@ -100,7 +121,9 @@ export async function POST(req: NextRequest) {
       copyPaste: pixPayment.data.brCode,
       amount: payment.amount,
       expiresAt: payment.expiresAt,
-      status: payment.status
+      status: payment.status,
+      planType: payment.planType,
+      planName: selectedPlan.name
     })
   } catch (error) {
     console.error('Erro ao criar pagamento PIX:', error)
