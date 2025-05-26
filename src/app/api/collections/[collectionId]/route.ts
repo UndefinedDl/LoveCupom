@@ -3,27 +3,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/constants/constants'
 
-// GET /api/collections/[id] - Obter uma coleção específica pelo ID
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { collectionId: string } }
-) {
-  try {
-    console.log('PARAMS', params)
-    const session = await getServerSession(authOptions)
+// Função utilitária para extrair o collectionId da URL
+function getCollectionIdFromRequest(req: NextRequest): string | null {
+  const match = req.nextUrl.pathname.match(/\/collections\/([^/]+)/)
+  return match ? match[1] : null
+}
 
+// GET /api/collections/[id]
+export async function GET(req: NextRequest) {
+  try {
+    const collectionId = getCollectionIdFromRequest(req)
+    if (!collectionId) {
+      return NextResponse.json(
+        { error: 'collectionId inválido' },
+        { status: 400 }
+      )
+    }
+
+    const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Corrigindo a consulta findUnique - deve ter apenas um campo único (id)
     const collection = await prisma.couponCollection.findUnique({
-      where: {
-        id: params.collectionId
-      }
+      where: { id: collectionId }
     })
 
-    // Se a coleção não existir ou não pertencer ao usuário atual
     if (!collection || collection.userId !== session.user.id) {
       return NextResponse.json(
         {
@@ -44,14 +49,18 @@ export async function GET(
   }
 }
 
-// PATCH /api/collections/[id] - Atualizar uma coleção
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// PATCH /api/collections/[id]
+export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const collectionId = getCollectionIdFromRequest(req)
+    if (!collectionId) {
+      return NextResponse.json(
+        { error: 'collectionId inválido' },
+        { status: 400 }
+      )
+    }
 
+    const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -59,11 +68,8 @@ export async function PATCH(
     const body = await req.json()
     const { title, description } = body
 
-    // Verificar se a coleção existe e pertence ao usuário
     const existingCollection = await prisma.couponCollection.findUnique({
-      where: {
-        id: params.id
-      }
+      where: { id: collectionId }
     })
 
     if (!existingCollection || existingCollection.userId !== session.user.id) {
@@ -76,9 +82,8 @@ export async function PATCH(
       )
     }
 
-    // Atualizar a coleção
     const updatedCollection = await prisma.couponCollection.update({
-      where: { id: params.id },
+      where: { id: collectionId },
       data: {
         title: title || existingCollection.title,
         description:
@@ -99,24 +104,24 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/collections/[id] - Excluir uma coleção
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// DELETE /api/collections/[id]
+export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const collectionId = getCollectionIdFromRequest(req)
+    if (!collectionId) {
+      return NextResponse.json(
+        { error: 'collectionId inválido' },
+        { status: 400 }
+      )
+    }
 
+    const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    console.log('PARAMS', params)
-    // Verificar se a coleção existe e pertence ao usuário
     const existingCollection = await prisma.couponCollection.findUnique({
-      where: {
-        id: params.id
-      }
+      where: { id: collectionId }
     })
 
     if (!existingCollection || existingCollection.userId !== session.user.id) {
@@ -129,9 +134,8 @@ export async function DELETE(
       )
     }
 
-    // Excluir a coleção (os cupons serão excluídos automaticamente devido à relação onDelete: Cascade)
     await prisma.couponCollection.delete({
-      where: { id: params.id }
+      where: { id: collectionId }
     })
 
     return NextResponse.json({ success: true })
