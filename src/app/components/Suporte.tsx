@@ -79,7 +79,7 @@ export const SupportWidget = () => {
 
       {/* Modal de suporte */}
       {isOpen && (
-        <div className="fixed inset-0 bg-transparent bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="text-black fixed inset-0 bg-transparent bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-pink-500 to-red-500 p-4 flex justify-between items-center">
