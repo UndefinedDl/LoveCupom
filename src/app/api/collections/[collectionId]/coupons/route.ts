@@ -10,13 +10,21 @@ import { canCreateCoupon } from '@/lib/planLimits'
 import { authOptions } from '@/constants/constants'
 
 // GET /api/collections/[collectionId]/coupons - Obter todos os cupons de uma coleção
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { collectionId: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
+    const { pathname } = req.nextUrl
+    // Extrai o collectionId da URL
+    const match = pathname.match(/\/collections\/([^/]+)\/coupons/)
+    const collectionId = match ? match[1] : null
+
+    if (!collectionId) {
+      return NextResponse.json(
+        { error: 'collectionId inválido' },
+        { status: 400 }
+      )
+    }
+
     const session = await getServerSession(authOptions)
-    const { collectionId } = params
 
     // Verificar se a coleção existe
     const collection = await prisma.couponCollection.findUnique({
@@ -52,18 +60,24 @@ export async function GET(
 }
 
 // POST /api/collections/[collectionId]/coupons - Criar um novo cupom
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { collectionId: string } }
-) {
+export async function POST(req: NextRequest) {
   try {
+    const { pathname } = req.nextUrl
+    const match = pathname.match(/\/collections\/([^/]+)\/coupons/)
+    const collectionId = match ? match[1] : null
+
+    if (!collectionId) {
+      return NextResponse.json(
+        { error: 'collectionId inválido' },
+        { status: 400 }
+      )
+    }
+
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
-
-    const { collectionId } = params
 
     // Verificar se a coleção existe e pertence ao usuário
     const collection = await prisma.couponCollection.findUnique({
