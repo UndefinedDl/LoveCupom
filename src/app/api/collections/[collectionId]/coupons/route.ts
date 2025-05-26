@@ -3,10 +3,11 @@
 import { getServerSession } from 'next-auth/next'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { authOptions } from '../../../auth/[...nextauth]/route'
+
 import { createCouponSchema } from '@/lib/validations'
 import { parseDate } from '@/lib/utils'
 import { canCreateCoupon } from '@/lib/planLimits'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 // GET /api/collections/[collectionId]/coupons - Obter todos os cupons de uma coleção
 export async function GET(

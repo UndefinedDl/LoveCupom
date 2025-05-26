@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createCollectionSchema } from '@/lib/validations'
 import { generateShareToken } from '@/lib/utils'
-import { authOptions } from '../auth/[...nextauth]/route'
+
 import { canCreateCollection } from '@/lib/planLimits'
+import { authOptions } from '../auth/[...nextauth]/route'
 
 // GET /api/collections - Obter todas as coleções do usuário
 export async function GET() {
