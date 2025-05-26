@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { paymentId: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
-    const { paymentId } = await params
+    // Extrai o paymentId da URL
+    const match = req.nextUrl.pathname.match(/\/payments\/status\/([^/]+)/)
+    const paymentId = match ? match[1] : null
+
+    if (!paymentId) {
+      return NextResponse.json({ error: 'paymentId inválido' }, { status: 400 })
+    }
 
     const payment = await prisma.payment.findUnique({
       where: {
